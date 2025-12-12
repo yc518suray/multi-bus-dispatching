@@ -1,2 +1,7 @@
 # multi-bus-dispatching
-Code to simulate multi-bus dispatching strategy, for the final project of Intelligent Manufacturing Systems, NCKU 2025 fall.
+
+This program simulates multi-bus dispatching strategy, for the final project of Intelligent Manufacturing Systems (智慧型製造系統), NCKU 2025 fall.
+
+# Compile
+
+# Usage
