@@ -6,7 +6,7 @@ using namespace std;
 
 /* ----- declarations ----- */
 
-string getLine(ifstream & infile);
+/* ----- main ----- */
 
 int main(int argc, char ** argv)
 {
@@ -18,11 +18,14 @@ int main(int argc, char ** argv)
 
 	/* ----- load data ----- */
 	
+	string line;
 	string infileName;
 	sprintf(infileName, "input-%d.dat", opt_data);
 
 	ifstream infile(infileName);
-
+	while(!infile.eof())
+	{
+	}
 	infile.close();
 
 	/* ----- Opt 1: Genetic Algorithm ----- */
@@ -45,7 +48,3 @@ int main(int argc, char ** argv)
 }
 
 /* ----- function definitions ----- */
-
-string getLine(ifstream & infile)
-{
-}
