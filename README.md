@@ -8,6 +8,8 @@ Reference paper: Y. Zhang, et al., "A Multi-Bus Dispatching Strategy Based on Bo
 
 main.cpp實現參考論文的做法，main2.cpp則是修改參考論文提出的問題，並嘗試得到修改後問題的最佳解。
 
+由於現實資料難以取得，我們嘗試以離散事件模擬的方式，生成trip之間來到車站的乘客數 $f_{i, j}(k)$，請見gen_data_sim.cpp。
+
 # Data format
 
 模擬所需的資料儲存在`.dat` extension的檔案裡。資料檔的第一行列出一些基本的參數，如下(數值為範例，隨便填上的)：
@@ -16,7 +18,7 @@ main.cpp實現參考論文的做法，main2.cpp則是修改參考論文提出的
 | ---------- | -------- | ----- | ---- | ------- | ----- | ----- | ----- |
 | 12         | 10       | 60    | 3    | 100     | 15    | 20    | 5     |
 
-其中 $\Delta$ 為最小派車區間，即兩trip的間隔時間；$T_r$ 為round-trip time(不計算每站停車時間)；$DT$ 為每一站的停留時間(dwell time)；$Cap_b$ 為每輛公車的乘客容量；$H_p$ 為預測區間(prediction horizon)，$H_p = N\Delta$，$N$ 為預測步數(prediction step)；$N_s$ 為車站數量，$N_b$ 則是公車總數。
+其中 $\Delta$ 為最小派車區間，即兩trip的間隔時間，$T_r$ 為round-trip time(不計算每站停車時間)，$DT$ 為每一站的停留時間(dwell time)，$Cap_b$ 為每輛公車的乘客容量，$H_p$ 為預測區間(prediction horizon)，$H_p = N\Delta$，$N$ 為預測步數(prediction step)，$N_s$ 為車站數量，$N_b$ 則是公車總數。
 
 <br>
 
@@ -27,11 +29,25 @@ main.cpp實現參考論文的做法，main2.cpp則是修改參考論文提出的
 | 0   | 0                 | 1   | 2   | 12            |
 | 1   | 0                 | 1   | 3   | 2             |
 | 2   | 0                 | 1   | 4   | 0             |
-| \vdots | \vdots | \vdots | \vdots | \vdots |
+| $\vdots$ | $\vdots$ | $\vdots$ | $\vdots$ | $\vdots$ |
 | 359 | 9                 | 8   | 9   | 3             |
 
 其中第一欄為列數，第二欄就是trip number，第三欄是搭乘站的index ($i$)，第四欄是目的站的index ($j$)，第五欄是在第 $k$ 和第 $k + 1$ 個trip之間來到第 $i$ 站、目的地為第 $j$ 站的乘客數。第 1 站就是發車的terminal。
 
 # Compile
 
+執行：
+
+```shell
+make
+```
+
 # Usage
+
+執行：
+
+```shell
+./main.sh
+```
+
+相關參數設定，可以在main.sh裡調整，或是在source code裡修改、重新編譯。
