@@ -18,7 +18,7 @@ main.cpp實現參考論文的做法，main2.cpp則是修改參考論文提出的
 | ---------- | -------- | ----- | ---- | ------- | ----- | ----- | ----- |
 | 12         | 10       | 60    | 3    | 100     | 15    | 20    | 5     |
 
-其中 $\Delta$ 為最小派車區間，即兩trip的間隔時間，$T_r$ 為round-trip time(不計算每站停車時間)，$DT$ 為每一站的停留時間(dwell time)，$Cap_b$ 為每輛公車的乘客容量，$H_p$ 為預測區間(prediction horizon)，$H_p = N\Delta$，$N$ 為預測步數(prediction step)，$N_s$ 為車站數量，$N_b$ 則是公車總數。
+其中 $\Delta$ 為最小派車區間，即兩trip的間隔時間， $T_r$ 為round-trip time(不計算每站停車時間)， $DT$ 為每一站的停留時間(dwell time)， $Cap_b$ 為每輛公車的乘客容量， $H_p$ 為預測區間(prediction horizon)， $H_p = N\Delta$， $N$ 為預測步數(prediction step)， $N_s$ 為車站數量， $N_b$ 則是公車總數。
 
 <br>
 
