@@ -94,7 +94,7 @@ int main(int argc, char ** argv)
 
 			for(int j = 0; j < Ns - 1; j++)
 			{
-				randNum = static_cast<double>(rand()) / INT_MAX;
+				randNum = static_cast<double>(rand()) / RAND_MAX;
 				eventList[i][j] = time + expoDistro(lambda, randNum);
 			}
 			eventList[i][Ns - 1] = double_max;
@@ -106,7 +106,7 @@ int main(int argc, char ** argv)
 
 			for(int j = 0; j < Ns - i + 1; j++)
 			{
-				randNum = static_cast<double>(rand()) / INT_MAX;
+				randNum = static_cast<double>(rand()) / RAND_MAX;
 				eventList[i][j] = time + expoDistro(lambda, randNum);
 			}
 			for(int j = Ns - i + 1; j < Ns; j++)
@@ -226,7 +226,7 @@ void scheduleArrival(double & t, double mu, double ** el, int ** cc, int L)
 	t = el[idx[0]][idx[1]];
 	
 	/* --- schedule next arrival --- */
-	double rnd = static_cast<double>(rand()) / INT_MAX;
+	double rnd = static_cast<double>(rand()) / RAND_MAX;
 	el[idx[0]][idx[1]] = t + expoDistro(mu, rnd);
 }
 

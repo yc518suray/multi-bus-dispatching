@@ -11,48 +11,62 @@ using namespace std;
 /* ----- function declarations ----- */
 
 void print3DArray(int *** A, int dim1, int dim2, int dim3, int d);
+void initial3DArray(int *** & A, int dim1, int dim2, int dim3);
+void clear3DArray(int *** & A, int dim1, int dim2, int dim3);
 
 /* ----- function definitions ----- */
 
-void Env::initialize(int Nb, int Ns, int N, int capb, int *** coming)
+Env::Env()
+{
+	B = nullptr;
+	V = nullptr;
+	P = nullptr;
+	f = nullptr;
+
+	Capb = 0;
+	Ns = 0;
+	Nb = 0;
+	N = 0;
+	bus_index = 0;
+}
+
+Env::~Env()
+{
+	for(int i = 0; i < Ns; i++)
+	{
+		for(int j = 0; j < Ns; j++)
+		{
+			delete [] B[i][j];
+			delete [] V[i][j];
+			delete [] P[i][j];
+			delete [] f[i][j];
+		}
+		delete [] B[i];
+		delete [] V[i];
+		delete [] P[i];
+		delete [] f[i];
+	}
+	delete [] B;
+	delete [] V;
+	delete [] P;
+	delete [] f;
+}
+
+void Env::initialize(int nb, int ns, int n, int capb, int *** coming)
 {
 	Capb = capb;
+	Nb = nb;
+	Ns = ns;
+	N = n;
 
 	/* ----- initialize B ----- */
-	B = new int ** [Ns];
-	for(int i = 0; i < Ns; i++)
-	{
-		B[i] = new int * [Ns];
-		for(int j = 0; j < Ns; j++)
-		{
-			B[i][j] = new int [Nb * N];
-			for(int k = 0; k < Nb * N; k++) B[i][j][k] = 0;
-		}
-	}
+	initial3DArray(B, Ns, Ns, Nb * N);
 
 	/* ----- initialize V ----- */
-	V = new int ** [Ns];
-	for(int i = 0; i < Ns; i++)
-	{
-		V[i] = new int * [Ns];
-		for(int j = 0; j < Ns; j++)
-		{
-			V[i][j] = new int [Nb * N];
-			for(int k = 0; k < Nb * N; k++) V[i][j][k] = 0;
-		}
-	}
+	initial3DArray(V, Ns, Ns, Nb * N);
 
 	/* ----- initialize P ----- */
-	P = new int ** [Ns];
-	for(int i = 0; i < Ns; i++)
-	{
-		P[i] = new int * [Ns];
-		for(int j = 0; j < Ns; j++)
-		{
-			P[i][j] = new int [N];
-			for(int k = 0; k < N; k++) P[i][j][k] = 0;
-		}
-	}
+	initial3DArray(P, Ns, Ns, N);
 
 	/* ----- initialize f ----- */
 	f = new int ** [Ns];
@@ -69,56 +83,102 @@ void Env::initialize(int Nb, int Ns, int N, int capb, int *** coming)
 
 void Env::printEverything(int opt)
 {
-	char option;
 	switch(opt)
 	{
 		case 1:
 			cout << "print out B below:" << endl;
-			print3DArray(B, Ns, Ns, N, Nb);
+			print3DArray(B, Ns, Ns, N * Nb, Nb);
 			break;
 		case 2:
-			option = 'V';
 			cout << "print out V below:" << endl;
-			print3DArray(V, Ns, Ns, N, Nb);
+			print3DArray(V, Ns, Ns, N * Nb, Nb);
 			break;
 		case 3:
-			option = 'P';
 			cout << "print out P below:" << endl;
-			print3DArray(P, Ns, Ns, N, 0);
+			print3DArray(P, Ns, Ns, N, 1);
 			break;
 		case 4:
-			option = 'f';
 			cout << "print out f below:" << endl;
-			print3DArray(f, Ns, Ns, N, 0);
+			print3DArray(f, Ns, Ns, N, 1);
 			break;
+		default:
+			cout << "nothing to print." << endl;
 	}
 	cout << "print complete." << endl;
 }
 
-void Env::cost(int opt)
+int Env::cost(int opt)
 {
+	return 0;
 }
 
-void print3DArray(int *** A, int dim1, int dim2, int dim3, int d)
+void Env::clear()
+{
+	// clear B, V, P, but not f
+	
+	clear3DArray(B, Ns, Ns, Nb * N);
+	clear3DArray(V, Ns, Ns, Nb * N);
+	clear3DArray(P, Ns, Ns, N);
+}
+
+/* ----- non-member functions ----- */
+
+void initial3DArray(int *** & A, int dim1, int dim2, int dim3)
+{
+	A = new int ** [dim1];
+	for(int i = 0; i < dim1; i++)
+	{
+		A[i] = new int * [dim2];
+		for(int j = 0; j < dim2; j++)
+		{
+			A[i][j] = new int [dim3];
+			for(int k = 0; k < dim3; k++) A[i][j][k] = 0;
+		}
+	}
+}
+
+void clear3DArray(int *** & A, int dim1, int dim2, int dim3)
 {
 	for(int i = 0; i < dim1; i++)
 	{
 		for(int j = 0; j < dim2; j++)
 		{
+			int * tmp = A[i][j];
+			for(int k = 0; k < dim3; k++) tmp[k] = 0;
+		}
+	}
+}
+
+void print3DArray(int *** A, int dim1, int dim2, int dim3, int d)
+{
+	// d = total number of buses
+	// if there's only 1 bus, ambiguity arises
+
+	for(int i = 0; i < dim1; i++)
+	{
+		int x = (i == 0)? (dim2 - 1): (dim2 - i);
+		for(int j = 0; j < x; j++)
+		{
+			int y = (i == 0)? (i + j + 2): (i + j + 1) % dim2 + 1;
 			for(int k = 0; k < (dim3 / d); k++)
 			{
-				cout << setw(4) << i << setw(4) << j << setw(4) << k;
-				if(d != 0)
+				cout << "i =" 	<< setw(4) << i + 1;
+				cout << ", j =" << setw(4) << y;
+				cout << ", k =" << setw(4) << k + 1;
+				cout << ", value =";
+				if(d != 1)
 				{
 					for(int l = 0; l < d; l++)
 					{
-						cout << setw(4) << A[i][j][l + k * d];
+						cout << setw(4) << A[i][j][k + l * (dim3 / d)];
 						if(l < d - 1) cout << ",";
 					}
 				}
 				else
 				{
+					cout << setw(4) << A[i][j][k];
 				}
+				cout << endl;
 			}
 		}
 	}

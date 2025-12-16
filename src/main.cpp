@@ -1,4 +1,4 @@
-// usage: ./main 
+// usage: ./main [input data file]
 
 #include<cstdio>
 #include<climits>
@@ -14,9 +14,7 @@ using namespace std;
 
 int main(int argc, char ** argv)
 {
-	int opt_data = stoi(argv[2]);
 	int algoOpt = 1; // opt for GA
-	Env environment;
 
 	/* ----- load data ----- */
 
@@ -29,13 +27,10 @@ int main(int argc, char ** argv)
 	double Hp;				// prediction horizon
 	int Capb;				// bus capacity
 
-	string infileName;
-	sprintf(infileName, "input-%d.dat", opt_data);
-	ifstream infile(infileName);
-
+	ifstream infile(argv[1]);
 	infile >> N >> Delta >> Tr >> DT >> Capb >> Hp >> Ns >> Nb;
 
-	int *** f;			// number of psngers coming between trips
+	int *** f;				// number of psngers coming between trips
 	f = new int ** [N];
 	for(int i = 0; i < N; i++)
 	{
@@ -47,7 +42,7 @@ int main(int argc, char ** argv)
 		}
 	}
 
-	int numLine = ;		// expected number of lines to input
+	int numLine = N * (Ns * Ns + Ns - 2) / 2;
 	int x, y, z;
 	for(int i = 0; i < numLine; i++)
 	{
@@ -66,6 +61,7 @@ int main(int argc, char ** argv)
 	infile.close();
 
 	/* ----- establish environment (dynamics) ----- */
+	
 	Env enviro;
 	enviro.initialize(Nb, Ns, N, Capb, f);
 
@@ -81,7 +77,7 @@ int main(int argc, char ** argv)
 
 	/* ----- parameters (HS) ----- */
 	
-	/* ----- pending ------ */
+	/* ----- !pending! ------ */
 
 	/* ----- Opt 1: Genetic Algorithm ----- */
 	if(algoOpt == 1)
@@ -90,7 +86,7 @@ int main(int argc, char ** argv)
 	/* ----- Opt 2: Harmony Search ----- */
 	else if(algoOpt == 2)
 	{
-		/* ----- pending ----- */
+		/* ----- !pending! ----- */
 	}
 	else
 	{
