@@ -1,12 +1,14 @@
+// usage: ./main 
+
 #include<cstdio>
+#include<climits>
 #include<string>
 #include<fstream>
+#include"../lib/dynamics.h"
 
 using namespace std;
 
 /* ----- declarations ----- */
-
-int cost();
 
 /* ----- main ----- */
 
@@ -14,6 +16,7 @@ int main(int argc, char ** argv)
 {
 	int opt_data = stoi(argv[2]);
 	int algoOpt = 1; // opt for GA
+	Env environment;
 
 	/* ----- load data ----- */
 
@@ -32,8 +35,19 @@ int main(int argc, char ** argv)
 
 	infile >> N >> Delta >> Tr >> DT >> Capb >> Hp >> Ns >> Nb;
 
-	int f[N][Ns][Ns] = {{INT_MAX}};// number of psngers coming between trips
-	int numLine = ;				   // expected number of lines to input
+	int *** f;			// number of psngers coming between trips
+	f = new int ** [N];
+	for(int i = 0; i < N; i++)
+	{
+		f[i] = new int * [Ns];
+		for(int j = 0; j < Ns; j++)
+		{
+			f[i][j] = new int [Ns];
+			for(int k = 0; k < Ns; k++) f[i][j][k] = INT_MAX;
+		}
+	}
+
+	int numLine = ;		// expected number of lines to input
 	int x, y, z;
 	for(int i = 0; i < numLine; i++)
 	{
@@ -51,11 +65,19 @@ int main(int argc, char ** argv)
 	
 	infile.close();
 
+	/* ----- establish environment (dynamics) ----- */
+	Env enviro;
+	enviro.initialize(Nb, Ns, N, Capb, f);
+
 	/* ----- parameters (GA) ----- */
 	
-	int Np = 50;		// population size
-	int Nit = 1000;		// number of iteration
-	int chromosome[Np][Ns][Ns] = {{0}};
+	int Np = 50;				   	 // population size
+	int Nit = 1000;				   	 // number of iteration
+	int chromosome[Np][Ns][Ns] = {{{-1}}};
+
+	/* ----- mutation parameters ----- */
+
+	/* ----- crossover parameters ----- */
 
 	/* ----- parameters (HS) ----- */
 	
@@ -82,8 +104,3 @@ int main(int argc, char ** argv)
 }
 
 /* ----- function definitions ----- */
-
-int cost()
-{
-	/* ----- fitness = 1 / cost ------ */
-}
