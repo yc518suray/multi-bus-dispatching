@@ -3,6 +3,8 @@
 #ifndef DYNAMICS_H
 #define DYNAMICS_H
 
+#include<vector>
+
 using namespace std;
 
 class Env
@@ -25,7 +27,7 @@ public:
 	~Env();						   // destructor
 	void initialize(int nb, int ns, int n, int capb, int *** coming);
 	void printEverything(int opt); // for debugging
-	int cost(int opt);
+	int cost(int opt, vector<vector<int>> x);
 	void clear();
 };
 

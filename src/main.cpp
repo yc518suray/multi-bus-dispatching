@@ -65,6 +65,11 @@ int main(int argc, char ** argv)
 	Env enviro;
 	enviro.initialize(Nb, Ns, N, Capb, f);
 
+	/* ----- establish dispatching indicator ----- */
+
+	vector<vector<int>> X;
+	X.resize(N, vector<int>(Nb));
+
 	/* ----- parameters (GA) ----- */
 	
 	int Np = 50;				   	 // population size

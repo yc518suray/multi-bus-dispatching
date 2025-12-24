@@ -1,7 +1,6 @@
 // define the dynamics and functions
 
 #include<vector>
-#include<set>
 #include<iostream>
 #include<iomanip>
 #include"dynamics.h"
@@ -107,9 +106,67 @@ void Env::printEverything(int opt)
 	cout << "print complete." << endl;
 }
 
-int Env::cost(int opt)
+int Env::cost(int opt, int headway, vector<vector<int>> bus)
 {
-	return 0;
+	// opt = 1 --> linear cost
+	// opt = 2 --> nonlinear cost
+	// bus	   --> bus dispatching indicator
+
+	int Cd = 1; // weight of delay cost
+	int Cv = 1; // weight of vacancy cost
+	int Jd = 0; // linear/nonlinear delay cost
+	int Jv = 0; // bus vacancy cost
+
+	int dummy, boarding_k;
+	for(int k = 0; k < N; k++)
+	{
+		for(int i = 0; i < Ns; i++)
+		{
+			dummy = (i == 0)? (Ns - 1): (Ns - i);
+			for(int j = 0; j < dummy; j++)
+			{
+				if(k == 0)
+				{
+					// update P
+					P[i][j][k] = f[i][j][k];
+
+					for(int s = 0; s < Nb; s++)
+					{
+						if(bus[k][s] == 1)
+						{
+							// update B
+							B[i][j][k + s * Nb] = ;
+							
+							// update V
+							V[i][j][k + s * Nb] = ;
+						}
+					}
+				}
+				else
+				{
+					// update P
+					boarding_k = 0;
+					for(int s = 0; s < Nb; s++)
+					{
+						boarding_k += B[i][j][k - 1];
+					}
+					P[i][j][k] = P[i][j][k - 1] + f[i][j][k] - boarding_k;
+
+					for(int x: bus[k])
+					{
+						if(x == 1)
+						{
+							// update B
+							// update V
+						}
+					}
+				}
+			}
+		}
+	}
+
+	int totalCost = Cd * Jd + Cv * Jv; 
+	return totalCost;
 }
 
 void Env::clear()
