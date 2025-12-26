@@ -3,6 +3,9 @@
 #include<vector>
 #include<iostream>
 #include<iomanip>
+#include<climits>
+#include<cstdlib>
+#include<cmath>
 #include"dynamics.h"
 
 using namespace std;
@@ -12,6 +15,8 @@ using namespace std;
 void print3DArray(int *** A, int dim1, int dim2, int dim3, int d);
 void initial3DArray(int *** & A, int dim1, int dim2, int dim3);
 void clear3DArray(int *** & A, int dim1, int dim2, int dim3);
+double uniform_rand();
+int minimum(int a, int b, int c);
 
 /* ----- function definitions ----- */
 
@@ -21,12 +26,12 @@ Env::Env()
 	V = nullptr;
 	P = nullptr;
 	f = nullptr;
+	choice = nullptr;
 
 	Capb = 0;
 	Ns = 0;
 	Nb = 0;
 	N = 0;
-	bus_index = 0;
 }
 
 Env::~Env()
@@ -40,15 +45,21 @@ Env::~Env()
 			delete [] P[i][j];
 			delete [] f[i][j];
 		}
+		for(int j = 0; j < Nb; j++)
+		{
+			delete [] choice[i][j];
+		}
 		delete [] B[i];
 		delete [] V[i];
 		delete [] P[i];
 		delete [] f[i];
+		delete [] choice[i];
 	}
 	delete [] B;
 	delete [] V;
 	delete [] P;
 	delete [] f;
+	delete [] choice;
 }
 
 void Env::initialize(int nb, int ns, int n, int capb, int *** coming)
@@ -66,6 +77,9 @@ void Env::initialize(int nb, int ns, int n, int capb, int *** coming)
 
 	/* ----- initialize P ----- */
 	initial3DArray(P, Ns, Ns, N);
+
+	/* ----- initialize choice ----- */
+	initial3DArray(choice, Ns, Nb, 3);
 
 	/* ----- initialize f ----- */
 	f = new int ** [Ns];
@@ -106,65 +120,131 @@ void Env::printEverything(int opt)
 	cout << "print complete." << endl;
 }
 
-int Env::cost(int opt, int headway, vector<vector<int>> bus)
+int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
 {
 	// opt = 1 --> linear cost
 	// opt = 2 --> nonlinear cost
 	// bus	   --> bus dispatching indicator
+	// DT	   --> dwell time at each stop (sec), constant
+	// note: the bus door opening-closing time toc is assumed 0
 
 	int Cd = 1; // weight of delay cost
 	int Cv = 1; // weight of vacancy cost
 	int Jd = 0; // linear/nonlinear delay cost
 	int Jv = 0; // bus vacancy cost
 
-	int dummy, boarding_k;
+	int dummy, boarding;
 	for(int k = 0; k < N; k++)
 	{
+		/* --- for each trip --- */
 		for(int i = 0; i < Ns; i++)
 		{
+			/* --- for each source --- */
+			int bidx;
 			dummy = (i == 0)? (Ns - 1): (Ns - i);
 			for(int j = 0; j < dummy; j++)
 			{
-				if(k == 0)
+				/* --- for each destination --- */
+				/* --- update V --- */
+				if((i > 1) || (i == 1 && j < dummy - 1))
 				{
-					// update P
-					P[i][j][k] = f[i][j][k];
-
 					for(int s = 0; s < Nb; s++)
 					{
-						if(bus[k][s] == 1)
-						{
-							// update B
-							B[i][j][k + s * Nb] = ;
-							
-							// update V
-							V[i][j][k + s * Nb] = ;
-						}
+						bidx = s + k * Nb;
+						V[i][j][bidx] = V[i - 1][j + 1][bidx] + B[i - 1][j + 1][bidx];
 					}
+				}
+				/* --- update P --- */
+				if(k == 0)
+				{
+					P[i][j][k] = f[i][j][k]; // no waiting at k - 1 = 0 trip
 				}
 				else
 				{
-					// update P
-					boarding_k = 0;
+					boarding = 0;
 					for(int s = 0; s < Nb; s++)
 					{
-						boarding_k += B[i][j][k - 1];
+						boarding += B[i][j][s + (k - 1) * Nb];
 					}
-					P[i][j][k] = P[i][j][k - 1] + f[i][j][k] - boarding_k;
-
-					for(int x: bus[k])
+					P[i][j][k] = P[i][j][k - 1] + f[i][j][k] - boarding;
+				}
+			}
+			/* --- update B --- */
+			int onbus[Nb] = {0}; // for use in equations (27)
+			double remains = 1.0;// for use in equations (26) ~ (28)
+			double rand_portion; // for use in equations (26) ~ (28)
+			for(int j = 0; j < dummy; j++)
+			{
+				/* --- equations (26) --- */
+				for(int s = 0; s < Nb; s++)
+				{
+					if(bus[k][s] == 1)
 					{
-						if(x == 1)
+						bidx = s + k * Nb;
+						if(s < Nb - 1)
 						{
-							// update B
-							// update V
+							rand_portion = uniform_rand();
 						}
+						else
+						{
+							rand_portion = 1.0;
+						}
+						choice[j][s][0] = floor(P[i][j][k] * remains * rand_portion);
+						remains = remains * (1 - rand_portion);
+						
+						onbus[s] += V[i][j][bidx];
 					}
 				}
 			}
+			remains = 1.0;
+			double LT = DT / alpha; // loading time
+			for(int s = 0; s < Nb; s++)
+			{
+				if(bus[k][s] == 1)
+				{
+					for(int j = 0; j < dummy; j++)
+					{
+						/* --- equations (27) --- */
+						if(j < dummy - 1)
+						{
+							rand_portion = uniform_rand();
+						}
+						else
+						{
+							rand_portion = 1.0;
+						}
+						choice[j][s][1] = floor(onbus[s] * remains * rand_portion);
+						remains = remains * (1 - rand_portion);
+						
+						/* --- equations (28) --- */
+						if(j < dummy - 1)
+						{
+							rand_portion = uniform_rand();
+						}
+						else
+						{
+							rand_portion = 1.0;
+						}
+						choice[j][s][2] = floor(LT * remains * rand_portion);
+					}
+				}
+			}
+			for(int j = 0; j < dummy; j++)
+			{
+				for(int s = 0; s < Nb; s++)
+				{
+					if(bus[k][s] == 1)
+					{
+						bidx = s + k * Nb;
+						B[i][j][bidx] = minimum(choice[j][s][0],\
+												choice[j][s][1],\
+												choice[j][s][2]);
+					}
+				}
+			}
+			clear3DArray(choice, Ns, Nb, 3);
 		}
 	}
-
 	int totalCost = Cd * Jd + Cv * Jv; 
 	return totalCost;
 }
@@ -209,7 +289,6 @@ void clear3DArray(int *** & A, int dim1, int dim2, int dim3)
 void print3DArray(int *** A, int dim1, int dim2, int dim3, int d)
 {
 	// d = total number of buses
-	// if there's only 1 bus, ambiguity arises
 
 	for(int i = 0; i < dim1; i++)
 	{
@@ -227,7 +306,7 @@ void print3DArray(int *** A, int dim1, int dim2, int dim3, int d)
 				{
 					for(int l = 0; l < d; l++)
 					{
-						cout << setw(4) << A[i][j][k + l * (dim3 / d)];
+						cout << setw(4) << A[i][j][l + k * d];
 						if(l < d - 1) cout << ",";
 					}
 				}
@@ -239,4 +318,20 @@ void print3DArray(int *** A, int dim1, int dim2, int dim3, int d)
 			}
 		}
 	}
+}
+
+double uniform_rand()
+{
+	return static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
+}
+
+int minimum(int a, int b, int c)
+{
+	int x = INT_MAX;
+	if(a < x) x = a;
+	if(b < x) x = b;
+	if(c < x) x = c;
+	
+	return x;
+
 }

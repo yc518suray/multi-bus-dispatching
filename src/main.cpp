@@ -1,6 +1,7 @@
 // usage: ./main [input data file]
 
 #include<cstdio>
+#include<cstdlib>
 #include<climits>
 #include<string>
 #include<fstream>
@@ -14,6 +15,7 @@ using namespace std;
 
 int main(int argc, char ** argv)
 {
+	srand(42);		 // random seed
 	int algoOpt = 1; // opt for GA
 
 	/* ----- load data ----- */
@@ -23,7 +25,7 @@ int main(int argc, char ** argv)
 	int Nb;					// number of buses
 	double Delta;			// minimum dispatching interval
 	double Tr;				// round trip time (without stopping)
-	double DT;				// dwell time at each stop
+	double DT = 180.0;		// dwell time at each stop
 	double Hp;				// prediction horizon
 	int Capb;				// bus capacity
 
