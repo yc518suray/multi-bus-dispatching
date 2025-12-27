@@ -1,1 +1,1 @@
-echo hello world there
+echo hello world

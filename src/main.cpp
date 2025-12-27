@@ -65,7 +65,7 @@ int main(int argc, char ** argv)
 	/* ----- establish environment (dynamics) ----- */
 	
 	Env enviro;
-	enviro.initialize(Nb, Ns, N, Capb, f);
+	enviro.initialize(Nb, Ns, N, Capb, f, Delta);
 
 	/* ----- establish dispatching indicator ----- */
 

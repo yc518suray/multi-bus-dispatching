@@ -26,6 +26,7 @@ Env::Env()
 	V = nullptr;
 	P = nullptr;
 	f = nullptr;
+	X = nullptr;
 	choice = nullptr;
 
 	Capb = 0;
@@ -44,6 +45,7 @@ Env::~Env()
 			delete [] V[i][j];
 			delete [] P[i][j];
 			delete [] f[i][j];
+			delete [] X[i][j];
 		}
 		for(int j = 0; j < Nb; j++)
 		{
@@ -53,21 +55,24 @@ Env::~Env()
 		delete [] V[i];
 		delete [] P[i];
 		delete [] f[i];
+		delete [] X[i];
 		delete [] choice[i];
 	}
 	delete [] B;
 	delete [] V;
 	delete [] P;
 	delete [] f;
+	delete [] X;
 	delete [] choice;
 }
 
-void Env::initialize(int nb, int ns, int n, int capb, int *** coming)
+void Env::initialize(int nb, int ns, int n, int capb, int *** coming, double Delta)
 {
 	Capb = capb;
 	Nb = nb;
 	Ns = ns;
 	N = n;
+	delta = (int)Delta;
 
 	/* ----- initialize B ----- */
 	initial3DArray(B, Ns, Ns, Nb * N);
@@ -77,6 +82,9 @@ void Env::initialize(int nb, int ns, int n, int capb, int *** coming)
 
 	/* ----- initialize P ----- */
 	initial3DArray(P, Ns, Ns, N);
+
+	/* ----- initialize X ----- */
+	initial3DArray(X, Ns, Ns, N * (N - 1) / 2);
 
 	/* ----- initialize choice ----- */
 	initial3DArray(choice, Ns, Nb, 3);
@@ -152,12 +160,14 @@ int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
 					{
 						bidx = s + k * Nb;
 						V[i][j][bidx] = V[i - 1][j + 1][bidx] + B[i - 1][j + 1][bidx];
+						Jv += (Capb - V[i][j][bidx]); // equation (13)
 					}
 				}
 				/* --- update P --- */
 				if(k == 0)
 				{
 					P[i][j][k] = f[i][j][k]; // no waiting at k - 1 = 0 trip
+					if(opt == 1) Jd += P[i][j][k]; // equation (10)
 				}
 				else
 				{
@@ -167,6 +177,7 @@ int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
 						boarding += B[i][j][s + (k - 1) * Nb];
 					}
 					P[i][j][k] = P[i][j][k - 1] + f[i][j][k] - boarding;
+					if(opt == 1) Jd += P[i][j][k]; // equation (10)
 				}
 			}
 			/* --- update B --- */
@@ -229,6 +240,7 @@ int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
 					}
 				}
 			}
+			/* --- equation (29) --- */
 			for(int j = 0; j < dummy; j++)
 			{
 				for(int s = 0; s < Nb; s++)
@@ -245,7 +257,54 @@ int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
 			clear3DArray(choice, Ns, Nb, 3);
 		}
 	}
-	int totalCost = Cd * Jd + Cv * Jv; 
+	if(opt == 1) Jd *= delta;
+	if(opt == 2)
+	{
+		/* --- calculate perceived waiting time --- */
+		for(int i = 0; i < Ns; i++)
+		{
+			dummy = (i == 0)? (Ns - 1): (Ns - i);
+			for(int j = 0; j < dummy; j++)
+			{
+				/* --- equation (11) --- */
+				int a, b, c, tmp, jump_idx;
+				for(int k = 0; k < N - 1; k++)
+				{
+					a = 0; b = 0; c = 0; tmp = 0;
+					for(int s = 0; s < Nb; s++)
+					{
+						bidx = s + k * Nb;
+						tmp = tmp + B[i][j][bidx];
+						if(k > 0) a -= B[i][j][bidx];
+					}
+					for(int r = k + 1; r < N; r++)
+					{
+						for(int s = 0; s < Nb; s++)
+						{
+							bidx = s + r * Nb;
+							tmp = tmp + B[i][j][bidx];
+						}
+						if(k > 0)
+						{
+							a += P[i][j][k - 1];
+							c += f[i][j][k];
+						}
+						b = (tmp > a)? (tmp - a): 0;
+						jump_idx = r - k - 1 + N * k - k * (k - 1) / 2;
+						X[i][j][jump_idx] = (c > b)? (c - b): 0;
+						if(r > k + 1)
+						{
+							Jd += (r - k - 1) * (r - k - 1) *\
+								  (X[i][j][jump_idx] - X[i][j][jump_idx - 1]);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	int totalCost = Cd * Jd + Cv * Jv;
+	cout << "total cost = " << totalCost << endl;
 	return totalCost;
 }
 
