@@ -31,8 +31,8 @@ int main(int argc, char ** argv)
 	ofstream out(out_name);
 
 	/* ----- parameter settings ----- */
-	double lambda = 120.0; 	// mean of exponential distribution (seconds)
-	double Delta = 600.0; 	// min dispatched headway (seconds)
+	double lambda = 180.0; 	// mean of exponential distribution (seconds)
+	double Delta = 1800.0; 	// min dispatched headway (seconds)
 	const int Ns = 15; 		// number of stations
 	int N = 10; 			// number of prediction steps (trips)
 	double Tr = 185.0 * Ns; // round trip time (seconds, without stopping)

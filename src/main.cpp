@@ -13,6 +13,7 @@
 using namespace std;
 
 /* ----- Global Random Generator ----- */
+
 std::random_device rd;
 std::mt19937 gen(42); 
 std::uniform_real_distribution<> dis(0.0, 1.0);
@@ -40,8 +41,8 @@ public:
     vector<Individual> population;
 
     GeneticAlgorithm(int trips, int buses, int t_steps, int p_size, double c_rate, double m_rate)
-        : n_trips(trips), n_buses(buses), t_revisit_steps(t_steps),
-          pop_size(p_size), crossover_rate(c_rate), mutation_rate(m_rate) {}
+    				 : n_trips(trips), n_buses(buses), t_revisit_steps(t_steps),
+					   pop_size(p_size), crossover_rate(c_rate), mutation_rate(m_rate) {}
 
     void initializePopulation() {
         population.clear();
@@ -120,17 +121,17 @@ int main(int argc, char ** argv)
     }
 
     srand(42);       
-    int algoOpt = 1; // 1 for GA
+    int algoOpt = 1; 	// 1 for GA
 
     /* ----- load data ----- */
-    int N;                  // prediction steps
-    int Ns;                 // number of stops
-    int Nb;                 // number of buses
-    double Delta;           // minimum dispatching interval
-    double Tr;              // round trip time
-    double DT = 180.0;      // dwell time
-    double Hp;              // prediction horizon
-    int Capb;               // bus capacity
+    int N;				// prediction steps
+    int Ns;				// number of stops
+    int Nb;				// number of buses
+    double Delta;		// minimum dispatching interval
+    double Tr;			// round trip time
+    double DT;			// dwell time
+    double Hp;			// prediction horizon
+    int Capb;			// bus capacity
 
     ifstream infile(argv[1]);
     if (!infile) {
@@ -142,53 +143,86 @@ int main(int argc, char ** argv)
 
     int *** f;
     f = new int ** [N];
-    for(int i = 0; i < N; i++) {
+    for(int i = 0; i < N; i++)
+	{
         f[i] = new int * [Ns];
-        for(int j = 0; j < Ns; j++) {
+        for(int j = 0; j < Ns; j++)
+		{
             f[i][j] = new int [Ns];
-            for(int k = 0; k < Ns; k++) f[i][j][k] = INT_MAX;
+            for(int k = 0; k < Ns; k++) f[i][j][k] = 0;
         }
     }
 
     int numLine = N * (Ns * Ns + Ns - 2) / 2;
     int x, y, z;
     for(int i = 0; i < numLine; i++) {
-        infile >> x >> y >> z;
-        if(z == 1) z = Ns - y + 1;
-        else z = z - y;
         
-        if (x < N && (y-1) < Ns && (z-1) < Ns)
-             infile >> f[x][y - 1][z - 1];
+		infile >> x >> y >> z;
+		if(z == 1)
+		{
+			z = Ns - y + 1;
+		}
+        else
+		{
+			z = z - y;
+		}
+
+		infile >> f[x][y - 1][z - 1];
     }
     infile.close();
 
     /* ----- establish environment (dynamics) ----- */
     Env enviro;
-    enviro.initialize(Nb, Ns, N, Capb, f);
+    enviro.initialize(Nb, Ns, N, Capb, f, Delta);
 
     /* ----- GA Parameters ----- */
-    int Np = 50;           // population size
-    int Nit = 1000;        // iterations
+    int Np 	= 50;          // population size
+    int Nit = 3000;       // number of iterations
     double Pc = 0.5;       // crossover rate
     double Pm = 0.5;       // mutation rate
 
-    /* ----- Calculate T (Revisit Interval) ----- */
+    /* ----- calculate T (Revisit Interval) ----- */
     double total_round_trip_time = Tr + (Ns * DT);
     int T_revisit_steps = static_cast<int>(ceil(total_round_trip_time / Delta));
     if (T_revisit_steps < 1) T_revisit_steps = 1;
 
+	/* === debug === */
+	cout << "\nT_revisit_steps = " << T_revisit_steps << endl;
+	/* === debug === */
+
     /* ----- Algorithm Execution ----- */
     if(algoOpt == 1) // GA
     {
-        printf("Starting GA Optimization...\n");
+        printf("Starting GA Optimization ...\n");
         
         GeneticAlgorithm ga(N, Nb, T_revisit_steps, Np, Pc, Pm);
         ga.initializePopulation();
 
-        // [修正點]：呼叫 cost 函式，傳入參數 1 (線性成本) 和 DT
         for (auto& ind : ga.population) {
             ind.fitness = (double)enviro.cost(1, ind.genes, DT); 
-        }
+		}
+
+		/* === debug (test chromosome cost) === */
+		Individual test(N, Nb);
+		char testing;
+		cout << "\ntest cost of genes? Ans (y/n): ";
+		cin >> testing;
+		while(testing != 'n')
+		{
+			cout << "input genes (N = " << N << "):" << endl;
+			for(int i = 0; i < N; i++)
+			{
+				cout << "input for trip " << i << ": ";
+				for(int j = 0; j < Nb; j++)
+				{
+					cin >> test.genes[i][j];
+				}
+			}
+			cout << "cost of this chromosome is " << enviro.cost(1, test.genes, DT) << endl;
+			cout << "test cost of genes? Ans(y/n): ";
+			cin >> testing;
+		}
+		/* === debug === */
 
         for (int it = 0; it < Nit; ++it) {
             sort(ga.population.begin(), ga.population.end(), [](const Individual& a, const Individual& b) {
@@ -196,20 +230,19 @@ int main(int argc, char ** argv)
             });
 
             if (it % 100 == 0 || it == Nit - 1) {
-                printf("Iteration %d: Best Cost = %.2f\n", it, ga.population[0].fitness);
+            	printf("Iteration %d: Best Cost = %.2f\n", it, ga.population[0].fitness);
             }
 
             vector<Individual> newPopulation;
             newPopulation.push_back(ga.population[0]);
             newPopulation.push_back(ga.population[1]);
 
-            while (newPopulation.size() < Np) {
+            while ((int)newPopulation.size() < Np) {
                 Individual p1 = ga.selectParent();
                 Individual p2 = ga.selectParent();
                 Individual child = ga.crossover(p1, p2);
                 ga.mutate(child);
                 
-                // [修正點]：同樣呼叫 cost 函式
                 child.fitness = (double)enviro.cost(1, child.genes, DT); 
                 
                 newPopulation.push_back(child);

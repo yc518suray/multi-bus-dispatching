@@ -32,7 +32,6 @@ public:
 	void printEverything(int opt); // for debugging
 	void clear();
 	int cost(int opt, vector<vector<int>> x, double DT);
-	bool checkvalidB(vector<vector<int>> x, );
 };
 
 

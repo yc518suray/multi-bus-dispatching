@@ -10,6 +10,10 @@
 
 using namespace std;
 
+static int debug_time = 9527;	// debug timing
+static int debug_count = 0;		// count timing of debugging
+static bool lesszero = true;
+
 /* ----- function declarations ----- */
 
 void print3DArray(int *** A, int dim1, int dim2, int dim3, int d);
@@ -120,15 +124,16 @@ void Env::printEverything(int opt)
 			break;
 		case 4:
 			cout << "print out f below:" << endl;
+			cout << "note: \'k\' should be replaced with \'k - 1\' below" << endl;
 			print3DArray(f, Ns, Ns, N, 1);
 			break;
 		default:
-			cout << "nothing to print." << endl;
+			cout << "Nothing to print." << endl;
 	}
-	cout << "print complete." << endl;
+	cout << "Print complete." << endl;
 }
 
-int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
+int Env::cost(int opt, vector<vector<int>> bus, double DT)
 {
 	// opt = 1 --> linear cost
 	// opt = 2 --> nonlinear cost
@@ -141,14 +146,30 @@ int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
 	int Jd = 0; // linear/nonlinear delay cost
 	int Jv = 0; // bus vacancy cost
 
-	int dummy, boarding;
+	/* === debug === */
+	//if(debug_count == debug_time)
+	//{
+	//	cout << "this dispatching vector: " << endl;
+	//	for(int i = 0; i < N; i++)
+	//	{
+	//		cout << "trip " << i << ": ";
+	//		for(int j = 0; j < Nb; j++)
+	//		{
+	//			cout << bus[i][j] << " ";
+	//		}
+	//		cout << endl;
+	//	}
+	//	cout << endl;
+	//}
+	/* === debug === */
+
+	int dummy, bidx, boarding;
 	for(int k = 0; k < N; k++)
 	{
 		/* --- for each trip --- */
 		for(int i = 0; i < Ns; i++)
 		{
 			/* --- for each source --- */
-			int bidx;
 			dummy = (i == 0)? (Ns - 1): (Ns - i);
 			for(int j = 0; j < dummy; j++)
 			{
@@ -161,6 +182,15 @@ int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
 						bidx = s + k * Nb;
 						V[i][j][bidx] = V[i - 1][j + 1][bidx] + B[i - 1][j + 1][bidx];
 						Jv += (Capb - V[i][j][bidx]); // equation (13)
+
+						/* === debug === */
+						if(debug_count == debug_time && V[i][j][bidx] < 0 && lesszero)
+						{
+							cout << "\nV < 0 at i, j, k = " << i << ", " << j << ", " << k
+								 << ", bus = " << s << "\n\n";
+							lesszero = false;
+						}
+						/* === debug === */
 					}
 				}
 				/* --- update P --- */
@@ -178,68 +208,117 @@ int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
 					}
 					P[i][j][k] = P[i][j][k - 1] + f[i][j][k] - boarding;
 					if(opt == 1) Jd += P[i][j][k]; // equation (10)
+					
+					/* === debug === */
+					if(debug_count == debug_time && P[i][j][k] < 0 && lesszero)
+					{
+						cout << "\nP < 0 at i, j, k = " << i << ", " << j << ", " << k << "\n\n";
+						lesszero = false;
+					}
+					/* === debug === */
 				}
 			}
 			/* --- update B --- */
 			int onbus[Nb] = {0}; // for use in equations (27)
-			double remains = 1.0;// for use in equations (26) ~ (28)
-			double rand_portion; // for use in equations (26) ~ (28)
+			//double remains;		 // for use in equations (26) ~ (27)
+			//double remains2;	 // for use in equations (28)
+			//double rand_portion; // for use in equations (26) ~ (28)
 			for(int j = 0; j < dummy; j++)
 			{
 				/* --- equations (26) --- */
+				int num_bus = 0, count_bus = 0;
 				for(int s = 0; s < Nb; s++)
 				{
+					if(bus[k][s] == 1) num_bus++;
+				}
+				//remains = 1.0;
+				for(int s = 0; s < Nb; s++)
+				{
+					count_bus++;
 					if(bus[k][s] == 1)
 					{
 						bidx = s + k * Nb;
-						if(s < Nb - 1)
-						{
-							rand_portion = uniform_rand();
-						}
-						else
-						{
-							rand_portion = 1.0;
-						}
-						choice[j][s][0] = floor(P[i][j][k] * remains * rand_portion);
-						remains = remains * (1 - rand_portion);
-						
+						/* === debug, old method === */
+						//if(count_bus < num_bus)
+						//{
+						//	rand_portion = uniform_rand();
+						//}
+						//else
+						//{
+						//	rand_portion = 1.0;
+						//}
+						//choice[j][s][0] = floor(P[i][j][k] * remains * rand_portion);
+						//remains = remains * (1 - rand_portion);
+						/* === debug === */
+
+						choice[j][s][0] = floor(P[i][j][k] / static_cast<double>(num_bus));
 						onbus[s] += V[i][j][bidx];
 					}
 				}
 			}
-			remains = 1.0;
-			double LT = DT / alpha; // loading time
+			double MBF = DT / alpha; // maximum boarding flow limited by DT
 			for(int s = 0; s < Nb; s++)
 			{
+				//remains = 1.0;
+				//remains2 = 1.0;
+
 				if(bus[k][s] == 1)
 				{
 					for(int j = 0; j < dummy; j++)
 					{
 						/* --- equations (27) --- */
-						if(j < dummy - 1)
-						{
-							rand_portion = uniform_rand();
-						}
-						else
-						{
-							rand_portion = 1.0;
-						}
-						choice[j][s][1] = floor(onbus[s] * remains * rand_portion);
-						remains = remains * (1 - rand_portion);
-						
+						/* === debug, old method === */
+						//if(j < dummy - 1)
+						//{
+						//	rand_portion = uniform_rand();
+						//}
+						//else
+						//{
+						//	rand_portion = 1.0;
+						//}
+						//choice[j][s][1] = floor((Capb - onbus[s]) * remains * rand_portion);
+						//remains = remains * (1 - rand_portion);
+						/* === debug === */
+
+						choice[j][s][1] = floor((Capb - onbus[s]) / static_cast<double>(dummy));
+
 						/* --- equations (28) --- */
-						if(j < dummy - 1)
-						{
-							rand_portion = uniform_rand();
-						}
-						else
-						{
-							rand_portion = 1.0;
-						}
-						choice[j][s][2] = floor(LT * remains * rand_portion);
+						/* === debug, old method === */
+						//if(j < dummy - 1)
+						//{
+						//	rand_portion = uniform_rand();
+						//}
+						//else
+						//{
+						//	rand_portion = 1.0;
+						//}
+						//choice[j][s][2] = floor(MBF * remains2 * rand_portion);
+						//remains2 = remains2 * (1 - rand_portion);
+						/* === debug === */
+
+						choice[j][s][2] = floor(MBF / static_cast<double>(dummy));
 					}
 				}
 			}
+
+			/* === debug === */
+			//if(debug_count == debug_time)
+			//{
+			//	cout << "\n\nk = " << k << ", i = " << i << endl;
+			//	for(int j = 0; j < dummy; j++)
+			//	{
+			//		cout << "j = " << j << ", ";
+			//		cout << "choice 0: ";
+			//		for(int s = 0; s < Nb; s++) cout << choice[j][s][0] << " ";
+			//		cout << "choice 1: ";
+			//		for(int s = 0; s < Nb; s++) cout << choice[j][s][1] << " ";
+			//		cout << "choice 2: ";
+			//		for(int s = 0; s < Nb; s++) cout << choice[j][s][2] << " ";
+			//		cout << endl;
+			//	}
+			//}
+			/* === debug === */
+
 			/* --- equation (29) --- */
 			for(int j = 0; j < dummy; j++)
 			{
@@ -248,15 +327,45 @@ int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
 					if(bus[k][s] == 1)
 					{
 						bidx = s + k * Nb;
-						B[i][j][bidx] = minimum(choice[j][s][0],\
-												choice[j][s][1],\
-												choice[j][s][2]);
+						B[i][j][bidx] = minimum(choice[j][s][0], choice[j][s][1], choice[j][s][2]);
+						
+						/* === debug === */
+						if(debug_count == debug_time && B[i][j][bidx] < 0 && lesszero)
+						{
+							cout << "\nB < 0 at i, j, k = " << i << ", " << j << ", " << k
+								 << ", bus = " << s << "\n\n";
+							lesszero = false;
+						}
+						/* === debug === */
 					}
 				}
 			}
 			clear3DArray(choice, Ns, Nb, 3);
 		}
 	}
+	
+	/* === debug === */
+	int what = 0;
+	if(debug_count == debug_time)
+	{
+		cout << "\nenter option to printEverything (1 ~ 4, enter -1 to leave debug): ";
+		while(cin >> what)
+		{
+			if(what == -1)
+			{
+				debug_count++;
+				break;
+			}
+			else
+			{
+				this -> printEverything(what);
+			}
+			cout << "\nenter option to printEverything (1 ~ 4, enter -1 to leave debug): ";
+		}
+	}
+	else debug_count++;
+	/* === debug === */
+
 	if(opt == 1) Jd *= delta;
 	if(opt == 2)
 	{
@@ -304,7 +413,8 @@ int Env::cost(int opt, int headway, vector<vector<int>> bus, double DT)
 	}
 
 	int totalCost = Cd * Jd + Cv * Jv;
-	cout << "total cost = " << totalCost << endl;
+	this -> clear();
+
 	return totalCost;
 }
 
@@ -315,6 +425,8 @@ void Env::clear()
 	clear3DArray(B, Ns, Ns, Nb * N);
 	clear3DArray(V, Ns, Ns, Nb * N);
 	clear3DArray(P, Ns, Ns, N);
+	clear3DArray(X, Ns, Ns, N * (N - 1) / 2);
+	clear3DArray(choice, Ns, Nb, 3);
 }
 
 /* ----- non-member functions ----- */
