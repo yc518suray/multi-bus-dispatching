@@ -6,7 +6,7 @@ Reference paper: Y. Zhang, et al., "A Multi-Bus Dispatching Strategy Based on Bo
 
 # Intro
 
-main.cpp實現參考論文的做法，main2.cpp則是修改參考論文提出的問題，並嘗試得到修改後問題的最佳解。
+main.cpp實現參考論文的做法，main2.cpp則是修改參考論文提出的問題，並嘗試得到修改後問題的最佳解。(2025/12/29 目前仍未完成main2.cpp)
 
 由於現實資料難以取得，我們嘗試以離散事件模擬的方式，生成trip之間來到車站的乘客數 $f_{i, j}(k)$，請見gen_data_sim.cpp。
 
@@ -33,7 +33,7 @@ main.cpp實現參考論文的做法，main2.cpp則是修改參考論文提出的
 | 366 | 9                 | 8   | 1   | 3             |
 | 367 | 9                 | 9   | 1   | 1             |
 
-其中第一欄為列數(實際上不會出現，表格只是示意第幾列)，第二欄(實際上的第一欄)就是trip number，第三欄是搭乘站的index ($i$)，第四欄是目的站的index ($j$)，第五欄是在第 $k$ 和第 $k + 1$ 個trip之間來到第 $i$ 站、目的地為第 $j$ 站的乘客數 ( $f_{i, j}(k)$ )。第 1 站就是發車的terminal。
+其中第一欄為行數(實際上不會出現，表格只是示意這是第幾行)，第二欄(實際上的第一欄)就是trip number，第三欄是搭乘站的index ($i$)，第四欄是目的站的index ($j$)，第五欄是在第 $k$ 和第 $k + 1$ 個trip之間來到第 $i$ 站、目的地為第 $j$ 站的乘客數 ( $f_{i, j}(k)$ )。第 1 站就是發車的terminal。
 
 # Compile
 

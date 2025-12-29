@@ -177,8 +177,8 @@ int main(int argc, char ** argv)
 
     /* ----- GA Parameters ----- */
     int Np 	= 50;          // population size
-    int Nit = 3000;       // number of iterations
-    double Pc = 0.5;       // crossover rate
+    int Nit = 1000;		   // number of iterations
+    double Pc = 0.5;	   // crossover rate
     double Pm = 0.5;       // mutation rate
 
     /* ----- calculate T (Revisit Interval) ----- */

@@ -31,17 +31,17 @@ int main(int argc, char ** argv)
 	ofstream out(out_name);
 
 	/* ----- parameter settings ----- */
-	double lambda = 600.0; 	// mean of exponential distribution (seconds)
+	double lambda = 120.0; 	// mean of exponential distribution (seconds)
 	double Delta = 600.0; 	// min dispatched headway (seconds)
-	const int Ns = 10; 		// number of stations
-	int N = 10; 			// number of prediction steps (trips)
+	const int Ns = 25; 		// number of stations
+	int N = 12; 			// number of prediction steps (trips)
 	double Tr = 180.0 * Ns; // round trip time (seconds, without stopping)
 	double DT = 180.0; 		// dwell time at each stop (seconds)
 	double Hp = N * Delta; 	// prediction horizon (seconds)
-	int Nb = 3; 			// number of buses
+	int Nb = 5; 			// number of buses
 	int Capb = 100; 		// capacity of each bus
 
-	int df = 0;				// dawn factor for the "dawn" time period
+	int df = 1;				// dawn factor for the "dawn" time period
 	int Ntr = static_cast<int>((Tr + DT * Ns) / Delta);
 							// number of trips on route at the same time
 
