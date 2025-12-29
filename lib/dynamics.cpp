@@ -175,7 +175,7 @@ int Env::cost(int opt, vector<vector<int>> bus, double DT)
 			{
 				/* --- for each destination --- */
 				/* --- update V --- */
-				if((i > 1) || (i == 1 && j < dummy - 1))
+				if(i > 0)
 				{
 					for(int s = 0; s < Nb; s++)
 					{
@@ -414,6 +414,11 @@ int Env::cost(int opt, vector<vector<int>> bus, double DT)
 
 	int totalCost = Cd * Jd + Cv * Jv;
 	this -> clear();
+
+	if(debug_count == debug_time + 1)
+	{
+		cout << "Jd = " << Jd << ", Jv = " << Jv << endl;
+	}
 
 	return totalCost;
 }
