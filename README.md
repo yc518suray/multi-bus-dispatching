@@ -52,3 +52,5 @@ main.cpp實現參考論文的做法，main2.cpp則是修改參考論文提出的
 ```shell
 ./main.sh
 ```
+
+main.sh會從gen_sim_data開始執行，生成data，接著執行main來求解。因此任何變動都應修改`src/gen_sim_data.cpp`的數值設定。

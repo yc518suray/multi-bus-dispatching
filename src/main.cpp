@@ -1,130 +1,39 @@
+// main program of genetic algorithm
+
 #include <cstdio>
 #include <cstdlib>
 #include <climits>
+#include <cmath>
+
 #include <fstream>
-#include <iostream>
 #include <vector>
 #include <string>
 #include <algorithm>
 #include <random>
-#include <cmath>
 #include <chrono>
 #include "../lib/dynamics.h" 
+#include "../lib/GA.h"
 
 using namespace std;
 
 /* ----- Global Random Generator ----- */
 
-std::random_device rd;
+//std::random_device rd;
 std::mt19937 gen(42); 
 std::uniform_real_distribution<> dis(0.0, 1.0);
-
-/* ----- GA Structures & Classes ----- */
-
-struct Individual {
-    vector<vector<int>> genes;
-    double fitness;
-
-    Individual(int N_trips, int N_buses) {
-        genes.resize(N_trips, vector<int>(N_buses, 0));
-        fitness = 1e18; 
-    }
-};
-
-class GeneticAlgorithm {
-public:
-    int n_trips;
-    int n_buses;
-    int t_revisit_steps; 
-    int pop_size;
-    double crossover_rate;
-    double mutation_rate;
-    vector<Individual> population;
-
-    GeneticAlgorithm(int trips, int buses, int t_steps, int p_size, double c_rate, double m_rate)
-    				 : n_trips(trips), n_buses(buses), t_revisit_steps(t_steps),
-					   pop_size(p_size), crossover_rate(c_rate), mutation_rate(m_rate) {}
-
-    void initializePopulation() {
-        population.clear();
-        for (int p = 0; p < pop_size; ++p) {
-            Individual ind(n_trips, n_buses);
-            for (int b = 0; b < n_buses; ++b) {
-                for (int k = 0; k < n_trips; ++k) {
-                    ind.genes[k][b] = (dis(gen) > 0.5) ? 1 : 0;
-                    for (int k_prev = 0; k_prev < k; ++k_prev) {
-                        if (ind.genes[k_prev][b] == 1 && (k - k_prev) < t_revisit_steps) {
-                            ind.genes[k][b] = 0; 
-                            break;
-                        }
-                    }
-                }
-            }
-            population.push_back(ind);
-        }
-    }
-
-    Individual selectParent() {
-        int tournamentSize = 5;
-        int bestIdx = -1;
-        double bestFit = 1e18;
-        uniform_int_distribution<> idxDist(0, pop_size - 1);
-
-        for (int i = 0; i < tournamentSize; ++i) {
-            int randomIdx = idxDist(gen);
-            if (population[randomIdx].fitness < bestFit) {
-                bestFit = population[randomIdx].fitness;
-                bestIdx = randomIdx;
-            }
-        }
-        return population[bestIdx];
-    }
-
-    Individual crossover(const Individual& parent1, const Individual& parent2) {
-        Individual offspring = parent1; 
-        if (dis(gen) < crossover_rate) {
-            for (int b = 0; b < n_buses; ++b) {
-                uniform_int_distribution<> pointDist(0, n_trips - 1);
-                int crossoverPoint = pointDist(gen);
-                for (int k = crossoverPoint; k < n_trips; ++k) {
-                    offspring.genes[k][b] = parent2.genes[k][b];
-                }
-            }
-        }
-        return offspring;
-    }
-
-    void mutate(Individual& ind) {
-        double gene_mutation_prob = mutation_rate / (double)(n_buses * n_trips);
-        for (int b = 0; b < n_buses; ++b) {
-            for (int k = 0; k < n_trips; ++k) {
-                if (dis(gen) < gene_mutation_prob) {
-                    ind.genes[k][b] = 1 - ind.genes[k][b]; 
-                }
-                for (int k_prev = 0; k_prev < k; ++k_prev) {
-                    if (ind.genes[k_prev][b] == 1 && (k - k_prev) < t_revisit_steps) {
-                        ind.genes[k][b] = 0; 
-                        break;
-                    }
-                }
-            }
-        }
-    }
-};
 
 /* ----- main ----- */
 
 int main(int argc, char ** argv)
 {
+	/* ----- runtime timing start ----- */
 	chrono::steady_clock::time_point ts = chrono::steady_clock::now();
 
-    if (argc < 2) {
+    if (argc < 2)
+	{
         printf("Usage: ./program [data_file]\n");
         return 1;
     }
-
-    srand(42);       
-    int algoOpt = 1; 	// 1 for GA
 
     /* ----- load data ----- */
     int N;				// prediction steps
@@ -136,8 +45,11 @@ int main(int argc, char ** argv)
     double Hp;			// prediction horizon
     int Capb;			// bus capacity
 
-    ifstream infile(argv[1]);
-    if (!infile) {
+    int algoOpt = 1; 	// 1 for GA
+    
+	ifstream infile(argv[1]);
+    if (!infile)
+	{
         printf("Error opening file.\n");
         return 1;
     }
@@ -158,8 +70,8 @@ int main(int argc, char ** argv)
 
     int numLine = N * (Ns * Ns + Ns - 2) / 2;
     int x, y, z;
-    for(int i = 0; i < numLine; i++) {
-        
+    for(int i = 0; i < numLine; i++)
+	{    
 		infile >> x >> y >> z;
 		if(z == 1)
 		{
@@ -190,49 +102,32 @@ int main(int argc, char ** argv)
     if (T_revisit_steps < 1) T_revisit_steps = 1;
 
 	/* === debug === */
-	cout << "\nT_revisit_steps = " << T_revisit_steps << endl;
+	printf("\nT_revisit_steps = %d\n", T_revisit_steps);
 	/* === debug === */
+
 
     /* ----- Algorithm Execution ----- */
     if(algoOpt == 1) // GA
     {
         printf("Starting GA Optimization ...\n");
         
-        GeneticAlgorithm ga(N, Nb, T_revisit_steps, Np, Pc, Pm);
+        GeneticAlgorithm ga(N, Nb, T_revisit_steps, Np, Pc, Pm, gen);
         ga.initializePopulation();
 
-        for (auto& ind : ga.population) {
+		/* --- calculation initial fitness --- */
+        for (auto& ind : ga.population)
+		{
             ind.fitness = (double)enviro.cost(1, ind.genes, DT); 
 		}
 
-		/* === debug (test chromosome cost) === */
-		//Individual test(N, Nb);
-		//char testing;
-		//cout << "\ntest cost of genes? Ans (y/n): ";
-		//cin >> testing;
-		//while(testing != 'n')
-		//{
-		//	cout << "input genes (N = " << N << "):" << endl;
-		//	for(int i = 0; i < N; i++)
-		//	{
-		//		cout << "input for trip " << i << ": ";
-		//		for(int j = 0; j < Nb; j++)
-		//		{
-		//			cin >> test.genes[i][j];
-		//		}
-		//	}
-		//	cout << "cost of this chromosome is " << enviro.cost(1, test.genes, DT) << endl;
-		//	cout << "test cost of genes? Ans(y/n): ";
-		//	cin >> testing;
-		//}
-		/* === debug === */
+		/* --- iterations --- */
+        for (int it = 0; it < Nit; ++it)
+		{
+            sort(ga.population.begin(), ga.population.end(),\
+				 [](const Individual& a, const Individual& b){ return a.fitness < b.fitness; });
 
-        for (int it = 0; it < Nit; ++it) {
-            sort(ga.population.begin(), ga.population.end(), [](const Individual& a, const Individual& b) {
-                return a.fitness < b.fitness;
-            });
-
-            if (it % 100 == 0 || it == Nit - 1) {
+            if (it % 100 == 0 || it == Nit - 1)
+			{
             	printf("Iteration %d: Best Cost = %.2f\n", it, ga.population[0].fitness);
             }
 
@@ -240,7 +135,8 @@ int main(int argc, char ** argv)
             newPopulation.push_back(ga.population[0]);
             newPopulation.push_back(ga.population[1]);
 
-            while ((int)newPopulation.size() < Np) {
+            while ((int)newPopulation.size() < Np)
+			{
                 Individual p1 = ga.selectParent();
                 Individual p2 = ga.selectParent();
                 Individual child = ga.crossover(p1, p2);
@@ -258,9 +154,11 @@ int main(int argc, char ** argv)
         printf("Final Cost: %.2f\n", bestSol.fitness);
         
         printf("Dispatching Schedule (X):\n");
-        for (int k = 0; k < N; ++k) {
+        for (int k = 0; k < N; ++k)
+		{
             printf("Trip %2d: ", k + 1);
-            for (int b = 0; b < Nb; ++b) {
+            for (int b = 0; b < Nb; ++b)
+			{
                 printf("%d ", bestSol.genes[k][b]);
             }
             printf("\n");
@@ -276,8 +174,10 @@ int main(int argc, char ** argv)
         exit(1);
     }
 
+	/* ----- runtime timing end ----- */
 	chrono::steady_clock::time_point te = chrono::steady_clock::now();
-	cout << "time elapsed: " << chrono::duration_cast<chrono::milliseconds>(te - ts).count() << " ms.\n";
+	printf("time elapsed: %ld ms\n",
+		   chrono::duration_cast<chrono::milliseconds>(te - ts).count());
 
     return 0;
 }
