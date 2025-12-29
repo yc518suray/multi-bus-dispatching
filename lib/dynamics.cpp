@@ -10,7 +10,7 @@
 
 using namespace std;
 
-static int debug_time = 9527;	// debug timing
+static int debug_time = -1;	// debug timing
 static int debug_count = 0;		// count timing of debugging
 static bool lesszero = true;
 

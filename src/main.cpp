@@ -1,13 +1,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include <climits>
-#include <string>
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <string>
 #include <algorithm>
 #include <random>
 #include <cmath>
+#include <chrono>
 #include "../lib/dynamics.h" 
 
 using namespace std;
@@ -115,6 +116,8 @@ public:
 
 int main(int argc, char ** argv)
 {
+	chrono::steady_clock::time_point ts = chrono::steady_clock::now();
+
     if (argc < 2) {
         printf("Usage: ./program [data_file]\n");
         return 1;
@@ -203,25 +206,25 @@ int main(int argc, char ** argv)
 		}
 
 		/* === debug (test chromosome cost) === */
-		Individual test(N, Nb);
-		char testing;
-		cout << "\ntest cost of genes? Ans (y/n): ";
-		cin >> testing;
-		while(testing != 'n')
-		{
-			cout << "input genes (N = " << N << "):" << endl;
-			for(int i = 0; i < N; i++)
-			{
-				cout << "input for trip " << i << ": ";
-				for(int j = 0; j < Nb; j++)
-				{
-					cin >> test.genes[i][j];
-				}
-			}
-			cout << "cost of this chromosome is " << enviro.cost(1, test.genes, DT) << endl;
-			cout << "test cost of genes? Ans(y/n): ";
-			cin >> testing;
-		}
+		//Individual test(N, Nb);
+		//char testing;
+		//cout << "\ntest cost of genes? Ans (y/n): ";
+		//cin >> testing;
+		//while(testing != 'n')
+		//{
+		//	cout << "input genes (N = " << N << "):" << endl;
+		//	for(int i = 0; i < N; i++)
+		//	{
+		//		cout << "input for trip " << i << ": ";
+		//		for(int j = 0; j < Nb; j++)
+		//		{
+		//			cin >> test.genes[i][j];
+		//		}
+		//	}
+		//	cout << "cost of this chromosome is " << enviro.cost(1, test.genes, DT) << endl;
+		//	cout << "test cost of genes? Ans(y/n): ";
+		//	cin >> testing;
+		//}
 		/* === debug === */
 
         for (int it = 0; it < Nit; ++it) {
@@ -256,7 +259,7 @@ int main(int argc, char ** argv)
         
         printf("Dispatching Schedule (X):\n");
         for (int k = 0; k < N; ++k) {
-            printf("Trip %2d: ", k);
+            printf("Trip %2d: ", k + 1);
             for (int b = 0; b < Nb; ++b) {
                 printf("%d ", bestSol.genes[k][b]);
             }
@@ -272,6 +275,9 @@ int main(int argc, char ** argv)
         printf("wrong algorithm option\n");
         exit(1);
     }
+
+	chrono::steady_clock::time_point te = chrono::steady_clock::now();
+	cout << "time elapsed: " << chrono::duration_cast<chrono::milliseconds>(te - ts).count() << " ms.\n";
 
     return 0;
 }
