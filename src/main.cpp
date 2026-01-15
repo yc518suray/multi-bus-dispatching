@@ -105,7 +105,6 @@ int main(int argc, char ** argv)
 	printf("\nT_revisit_steps = %d\n", T_revisit_steps);
 	/* === debug === */
 
-
     /* ----- Algorithm Execution ----- */
     if(algoOpt == 1) // GA
     {

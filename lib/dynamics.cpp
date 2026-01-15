@@ -10,9 +10,8 @@
 
 using namespace std;
 
-static int debug_time = -1;	// debug timing
+static int debug_time = -1;		// debug timing
 static int debug_count = 0;		// count timing of debugging
-static bool lesszero = true;
 
 /* ----- function declarations ----- */
 
@@ -169,7 +168,7 @@ int Env::cost(int opt, vector<vector<int>> bus, double DT)
 		/* --- for each trip --- */
 		for(int i = 0; i < Ns; i++)
 		{
-			/* --- for each source --- */
+			/* --- for each origin --- */
 			dummy = (i == 0)? (Ns - 1): (Ns - i);
 			for(int j = 0; j < dummy; j++)
 			{
@@ -182,22 +181,12 @@ int Env::cost(int opt, vector<vector<int>> bus, double DT)
 						bidx = s + k * Nb;
 						V[i][j][bidx] = V[i - 1][j + 1][bidx] + B[i - 1][j + 1][bidx];
 						Jv += (Capb - V[i][j][bidx]); // equation (13)
-
-						/* === debug === */
-						if(debug_count == debug_time && V[i][j][bidx] < 0 && lesszero)
-						{
-							cout << "\nV < 0 at i, j, k = " << i << ", " << j << ", " << k
-								 << ", bus = " << s << "\n\n";
-							lesszero = false;
-						}
-						/* === debug === */
 					}
 				}
 				/* --- update P --- */
 				if(k == 0)
 				{
-					P[i][j][k] = f[i][j][k]; // no waiting at k - 1 = 0 trip
-					if(opt == 1) Jd += P[i][j][k]; // equation (10)
+					P[i][j][k] = f[i][j][k]; // no waiting at 0th trip
 				}
 				else
 				{
@@ -207,50 +196,24 @@ int Env::cost(int opt, vector<vector<int>> bus, double DT)
 						boarding += B[i][j][s + (k - 1) * Nb];
 					}
 					P[i][j][k] = P[i][j][k - 1] + f[i][j][k] - boarding;
-					if(opt == 1) Jd += P[i][j][k]; // equation (10)
-					
-					/* === debug === */
-					if(debug_count == debug_time && P[i][j][k] < 0 && lesszero)
-					{
-						cout << "\nP < 0 at i, j, k = " << i << ", " << j << ", " << k << "\n\n";
-						lesszero = false;
-					}
-					/* === debug === */
 				}
+				if(opt == 1) Jd += P[i][j][k]; // equation (10)
 			}
 			/* --- update B --- */
 			int onbus[Nb] = {0}; // for use in equations (27)
-			//double remains;		 // for use in equations (26) ~ (27)
-			//double remains2;	 // for use in equations (28)
-			//double rand_portion; // for use in equations (26) ~ (28)
 			for(int j = 0; j < dummy; j++)
 			{
 				/* --- equations (26) --- */
-				int num_bus = 0, count_bus = 0;
+				int num_bus = 0;
 				for(int s = 0; s < Nb; s++)
 				{
 					if(bus[k][s] == 1) num_bus++;
 				}
-				//remains = 1.0;
 				for(int s = 0; s < Nb; s++)
 				{
-					count_bus++;
 					if(bus[k][s] == 1)
 					{
 						bidx = s + k * Nb;
-						/* === debug, old method === */
-						//if(count_bus < num_bus)
-						//{
-						//	rand_portion = uniform_rand();
-						//}
-						//else
-						//{
-						//	rand_portion = 1.0;
-						//}
-						//choice[j][s][0] = floor(P[i][j][k] * remains * rand_portion);
-						//remains = remains * (1 - rand_portion);
-						/* === debug === */
-
 						choice[j][s][0] = floor(P[i][j][k] / static_cast<double>(num_bus));
 						onbus[s] += V[i][j][bidx];
 					}
@@ -259,65 +222,15 @@ int Env::cost(int opt, vector<vector<int>> bus, double DT)
 			double MBF = DT / alpha; // maximum boarding flow limited by DT
 			for(int s = 0; s < Nb; s++)
 			{
-				//remains = 1.0;
-				//remains2 = 1.0;
-
 				if(bus[k][s] == 1)
 				{
 					for(int j = 0; j < dummy; j++)
 					{
-						/* --- equations (27) --- */
-						/* === debug, old method === */
-						//if(j < dummy - 1)
-						//{
-						//	rand_portion = uniform_rand();
-						//}
-						//else
-						//{
-						//	rand_portion = 1.0;
-						//}
-						//choice[j][s][1] = floor((Capb - onbus[s]) * remains * rand_portion);
-						//remains = remains * (1 - rand_portion);
-						/* === debug === */
-
 						choice[j][s][1] = floor((Capb - onbus[s]) / static_cast<double>(dummy));
-
-						/* --- equations (28) --- */
-						/* === debug, old method === */
-						//if(j < dummy - 1)
-						//{
-						//	rand_portion = uniform_rand();
-						//}
-						//else
-						//{
-						//	rand_portion = 1.0;
-						//}
-						//choice[j][s][2] = floor(MBF * remains2 * rand_portion);
-						//remains2 = remains2 * (1 - rand_portion);
-						/* === debug === */
-
 						choice[j][s][2] = floor(MBF / static_cast<double>(dummy));
 					}
 				}
 			}
-
-			/* === debug === */
-			//if(debug_count == debug_time)
-			//{
-			//	cout << "\n\nk = " << k << ", i = " << i << endl;
-			//	for(int j = 0; j < dummy; j++)
-			//	{
-			//		cout << "j = " << j << ", ";
-			//		cout << "choice 0: ";
-			//		for(int s = 0; s < Nb; s++) cout << choice[j][s][0] << " ";
-			//		cout << "choice 1: ";
-			//		for(int s = 0; s < Nb; s++) cout << choice[j][s][1] << " ";
-			//		cout << "choice 2: ";
-			//		for(int s = 0; s < Nb; s++) cout << choice[j][s][2] << " ";
-			//		cout << endl;
-			//	}
-			//}
-			/* === debug === */
 
 			/* --- equation (29) --- */
 			for(int j = 0; j < dummy; j++)
@@ -328,15 +241,6 @@ int Env::cost(int opt, vector<vector<int>> bus, double DT)
 					{
 						bidx = s + k * Nb;
 						B[i][j][bidx] = minimum(choice[j][s][0], choice[j][s][1], choice[j][s][2]);
-						
-						/* === debug === */
-						if(debug_count == debug_time && B[i][j][bidx] < 0 && lesszero)
-						{
-							cout << "\nB < 0 at i, j, k = " << i << ", " << j << ", " << k
-								 << ", bus = " << s << "\n\n";
-							lesszero = false;
-						}
-						/* === debug === */
 					}
 				}
 			}
@@ -369,7 +273,10 @@ int Env::cost(int opt, vector<vector<int>> bus, double DT)
 	if(opt == 1) Jd *= delta;
 	if(opt == 2)
 	{
+		int qua = 0; // quadratic term
+
 		/* --- calculate perceived waiting time --- */
+		/* ---		note: not debugged yet		--- */
 		for(int i = 0; i < Ns; i++)
 		{
 			dummy = (i == 0)? (Ns - 1): (Ns - i);
@@ -403,8 +310,8 @@ int Env::cost(int opt, vector<vector<int>> bus, double DT)
 						X[i][j][jump_idx] = (c > b)? (c - b): 0;
 						if(r > k + 1)
 						{
-							Jd += (r - k - 1) * (r - k - 1) *\
-								  (X[i][j][jump_idx] - X[i][j][jump_idx - 1]);
+							qua = (r - k - 1) * (r - k - 1);
+							Jd += qua * (X[i][j][jump_idx] - X[i][j][jump_idx - 1]);
 						}
 					}
 				}
@@ -414,11 +321,6 @@ int Env::cost(int opt, vector<vector<int>> bus, double DT)
 
 	int totalCost = Cd * Jd + Cv * Jv;
 	this -> clear();
-
-	if(debug_count == debug_time + 1)
-	{
-		cout << "Jd = " << Jd << ", Jv = " << Jv << endl;
-	}
 
 	return totalCost;
 }
