@@ -194,10 +194,20 @@ void updateStats(ofstream & out, int ** cc, int * tc, int d, int L)
 	}
 	else
 	{
+		int tmp = 0;
 		for(int i = 0; i < L - d; i++)
 		{
+			if(i == L - d - 1)
+			{
+				tmp = 1;
+			}
+			else
+			{
+				tmp = i + d + 2;
+			}
+
 			out << tc[d] << " " << (d + 1) << " ";
-			out << (i + d + 2) % L << " " << cc[d][i] << endl;
+			out << tmp << " " << cc[d][i] << endl;
 			cc[d][i] = 0;
 		}
 	}
