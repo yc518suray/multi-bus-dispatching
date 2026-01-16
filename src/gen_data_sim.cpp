@@ -1,7 +1,7 @@
 // Usage: ./gen_data_sim.exe [output-file-path-name]
 // 
-// Note1: in this model, the round trip is fixed, i.e. traffic uncertainty
-// and bus overtake. It also assumes equal distance between adjacent stops.
+// Note1: in this model, the round trip is fixed, i.e. no traffic uncertainty
+// and no bus overtake. It also assumes equal distance between adjacent stops.
 //
 // Note2: Passengers coming during dwell time are NOT counted for the
 // present trip (but for the next trip).
@@ -101,15 +101,15 @@ int main(int argc, char ** argv)
 		}
 		else
 		{
-			// destinations: station (i + 1) ~ Ns, 1
+			// destinations: station (i + 2) ~ Ns, 1
 			// schedule the first arriving passengers
 
-			for(int j = 0; j < Ns - i + 1; j++)
+			for(int j = 0; j < Ns - i; j++)
 			{
 				randNum = static_cast<double>(rand()) / RAND_MAX;
 				eventList[i][j] = time + expoDistro(lambda, randNum);
 			}
-			for(int j = Ns - i + 1; j < Ns; j++)
+			for(int j = Ns - i; j < Ns; j++)
 			{
 				eventList[i][j] = double_max;
 			}
@@ -131,9 +131,9 @@ int main(int argc, char ** argv)
 			tripCurr[udIdx] = (tripCurr[udIdx] + 1) % Ns;
 
 			/* --- schedule next check point --- */
-			if(checkPoint[udIdx] > (Tr + Ns * DT) && tripCurr[udIdx] == 0)
+			if(tripCurr[udIdx] == 0)
 			{
-				checkPoint[udIdx] = checkPoint[(udIdx + 1) % Ntr] + Delta;
+				checkPoint[udIdx] = checkPoint[(udIdx - 1 + Ntr) % Ntr] + Delta;
 			}
 			else
 			{
@@ -194,19 +194,10 @@ void updateStats(ofstream & out, int ** cc, int * tc, int d, int L)
 	}
 	else
 	{
-		int tmp = 0;
 		for(int i = 0; i < L - d; i++)
 		{
-			if(i == L - d - 1)
-			{
-				tmp = 1;
-			}
-			else
-			{
-				tmp = i + d + 2;
-			}
 			out << tc[d] << " " << (d + 1) << " ";
-			out << tmp << " " << cc[d][i] << endl;
+			out << (i + d + 2) % L << " " << cc[d][i] << endl;
 			cc[d][i] = 0;
 		}
 	}
@@ -218,7 +209,7 @@ void scheduleArrival(double & t, double mu, double ** el, int ** cc, int L)
 	// cc = comingCount
 
 	/* --- find earliest event --- */
-	int idx[2] = {-1};
+	int idx[2] = {-1, -1};
 	findEarliest(el, idx, L);
 	++cc[idx[0]][idx[1]];
 	
@@ -259,7 +250,7 @@ int findEarliestCheck(double * ckpt, int L)
 	// L = Ntr
 
 	int min_idx = -1;
-	int min = INT_MAX;
+	double min = static_cast<double>(INT_MAX);
 	for(int i = 0; i < L; i++)
 	{
 		if(ckpt[i] < min)

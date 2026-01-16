@@ -6,8 +6,6 @@ Reference paper: Y. Zhang, et al., "A Multi-Bus Dispatching Strategy Based on Bo
 
 # Intro
 
-main.cpp實現參考論文的做法，main2.cpp則是修改參考論文提出的問題，並嘗試得到修改後問題的最佳解。(2025/12/29 目前仍未完成main2.cpp)
-
 由於現實資料難以取得，我們嘗試以離散事件模擬的方式，生成trip之間來到車站的乘客數 $f_{i, j}(k)$，請見gen_data_sim.cpp。
 
 # Data format
