@@ -1,3 +1,5 @@
+// Usage: ./main [input data file]
+//
 // main program of genetic algorithm
 
 #include <cstdio>
@@ -31,7 +33,7 @@ int main(int argc, char ** argv)
 
     if (argc < 2)
 	{
-        printf("Usage: ./program [data_file]\n");
+        printf("Usage: ./main [input data file]\n");
         return 1;
     }
 
@@ -122,8 +124,7 @@ int main(int argc, char ** argv)
 		/* --- iterations --- */
         for (int it = 0; it < Nit; ++it)
 		{
-            sort(ga.population.begin(), ga.population.end(),\
-				 [](const Individual& a, const Individual& b){ return a.fitness < b.fitness; });
+            sort(ga.population.begin(), ga.population.end(), [](const Individual& a, const Individual& b){ return a.fitness < b.fitness; });
 
             if (it % 100 == 0 || it == Nit - 1)
 			{
