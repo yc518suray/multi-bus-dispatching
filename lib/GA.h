@@ -35,11 +35,8 @@ public:
 	std::uniform_real_distribution<> dist{0.0, 1.0};
     
 	GeneticAlgorithm(int trips, int buses, int t_steps,
-					 int p_size, double c_rate, double m_rate, std::mt19937 g)
-					 : n_trips(trips), n_buses(buses),
-					   t_revisit_steps(t_steps),
-					   pop_size(p_size), crossover_rate(c_rate),
-					   mutation_rate(m_rate), gen_class(g){}
+					 int p_size, double c_rate, double m_rate, std::mt19937 g): n_trips(trips), n_buses(buses),
+					   t_revisit_steps(t_steps), pop_size(p_size), crossover_rate(c_rate), mutation_rate(m_rate), gen_class(g){}
 
 	void initializePopulation();
     Individual selectParent();
